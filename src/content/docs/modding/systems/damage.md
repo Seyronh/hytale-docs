@@ -297,6 +297,103 @@ public class MyDamageListener extends DamageEventSystem {
 }
 ```
 
+### Getting Target and Source References
+
+When handling a damage event, you often need both the entity that received damage (target) and the entity that dealt damage (source).
+
+**Getting the Target (damaged entity):**
+
+```java
+@Override
+public void handle(int index, ArchetypeChunk<EntityStore> chunk,
+                   Store<EntityStore> store, CommandBuffer<EntityStore> commandBuffer,
+                   Damage damage) {
+    // The target is obtained from the chunk - this is the entity receiving damage
+    Ref<EntityStore> targetRef = chunk.getReferenceTo(index);
+
+    // Get components from the target
+    Player targetPlayer = store.getComponent(targetRef, Player.getComponentType());
+}
+```
+
+**Getting the Source (attacker entity):**
+
+The source is stored in the `Damage` object. Use `damage.getSource()` and check/cast to the appropriate source type:
+
+```java
+@Override
+public void handle(int index, ArchetypeChunk<EntityStore> chunk,
+                   Store<EntityStore> store, CommandBuffer<EntityStore> commandBuffer,
+                   Damage damage) {
+    Ref<EntityStore> targetRef = chunk.getReferenceTo(index);
+    Damage.Source source = damage.getSource();
+
+    // Check if damage came from an entity (player or mob)
+    if (source instanceof Damage.EntitySource entitySource) {
+        Ref<EntityStore> attackerRef = entitySource.getRef();
+
+        // Check if attacker is a player
+        Player attackerPlayer = store.getComponent(attackerRef, Player.getComponentType());
+        if (attackerPlayer != null) {
+            String attackerName = attackerPlayer.getPlayerRef().getUsername();
+            // Handle player-dealt damage
+        }
+    }
+
+    // Check if damage came from a projectile
+    if (source instanceof Damage.ProjectileSource projectileSource) {
+        Ref<EntityStore> shooterRef = projectileSource.getRef();        // Who shot it
+        Ref<EntityStore> projectileRef = projectileSource.getProjectile(); // The projectile itself
+    }
+
+    // Check if damage came from environment (fall, drowning, etc.)
+    if (source instanceof Damage.EnvironmentSource envSource) {
+        String damageType = envSource.getType(); // e.g., "fall", "drowning"
+    }
+
+    // Check if damage came from a command
+    if (source instanceof Damage.CommandSource cmdSource) {
+        // Damage was dealt via server command
+    }
+}
+```
+
+**Complete Example - Player vs Mob Combat:**
+
+```java
+@Override
+public void handle(int index, ArchetypeChunk<EntityStore> chunk,
+                   Store<EntityStore> store, CommandBuffer<EntityStore> commandBuffer,
+                   Damage damage) {
+    // Get target (who received damage)
+    Ref<EntityStore> targetRef = chunk.getReferenceTo(index);
+
+    // Get source (who dealt damage)
+    Damage.Source source = damage.getSource();
+    if (!(source instanceof Damage.EntitySource entitySource)) {
+        return; // Not entity-to-entity damage
+    }
+    Ref<EntityStore> attackerRef = entitySource.getRef();
+
+    // Check if a player hit a mob
+    Player attackerPlayer = store.getComponent(attackerRef, Player.getComponentType());
+    Player targetPlayer = store.getComponent(targetRef, Player.getComponentType());
+
+    if (attackerPlayer != null && targetPlayer == null) {
+        // Player attacked a mob
+        String playerName = attackerPlayer.getPlayerRef().getUsername();
+        attackerPlayer.sendMessage(Message.translation(
+            String.format("You dealt %.1f damage!", damage.getAmount())));
+    }
+
+    if (attackerPlayer == null && targetPlayer != null) {
+        // Mob attacked a player
+        targetPlayer.sendMessage(Message.translation(
+            String.format("A mob hit you for %.1f damage!", damage.getAmount())));
+    }
+}
+```
+
 ### Registering in a Specific Damage Group
 
 By default, `DamageEventSystem` runs in the Inspect Damage Group (after damage is applied). To actually cancel or modify damage before it affects health, you must register in the **Filter Damage Group**:

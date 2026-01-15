@@ -668,6 +668,50 @@ protected void setup() {
 }
 ```
 
+### Adding a Damage Meter
+
+You can also show damage dealt by getting the source (attacker) from the damage event:
+
+```java
+// Track players with damage meter enabled
+private final Set<String> playersWithDamageMeter = new HashSet<>();
+
+public boolean hasDamageMeter(String username) {
+    return playersWithDamageMeter.contains(username);
+}
+```
+
+Then in your damage listener, check if the attacker has the feature enabled:
+
+```java
+@Override
+public void handle(int index, ArchetypeChunk<EntityStore> chunk,
+                   Store<EntityStore> store, CommandBuffer<EntityStore> commandBuffer,
+                   Damage damage) {
+
+    Ref<EntityStore> targetRef = chunk.getReferenceTo(index);
+    float damageAmount = damage.getAmount();
+
+    // Get the source (attacker) from the damage event
+    Damage.Source source = damage.getSource();
+    if (source instanceof Damage.EntitySource entitySource) {
+        Ref<EntityStore> attackerRef = entitySource.getRef();
+        if (attackerRef != null && attackerRef.isValid()) {
+            Player attackerPlayer = store.getComponent(attackerRef, Player.getComponentType());
+            if (attackerPlayer != null) {
+                String attackerUsername = attackerPlayer.getPlayerRef().getUsername();
+                if (hasDamageMeter(attackerUsername)) {
+                    attackerPlayer.sendMessage(Message.translation(
+                        String.format("Damage dealt: %.1f", damageAmount)));
+                }
+            }
+        }
+    }
+
+    // ... rest of damage handling (godmode, etc.)
+}
+```
+
 ### Key Points
 
 1. **Filter Damage Group**: Override `getGroup()` to return `DamageModule.get().getFilterDamageGroup()`. Without this, your system runs in the Inspect group (after damage is applied) and `setCancelled(true)` has no effect on health.
@@ -676,7 +720,11 @@ protected void setup() {
 
 3. **Permission Check**: Use `context.sender().hasPermission("permission.node")` for manual permission checks inside commands.
 
-4. **Damage Groups**:
+4. **Getting Target vs Source**:
+   - **Target** (who received damage): `chunk.getReferenceTo(index)`
+   - **Source** (who dealt damage): `damage.getSource()` → cast to `EntitySource` → `getRef()`
+
+5. **Damage Groups**:
    - `getGatherDamageGroup()` - Where damage events are created
    - `getFilterDamageGroup()` - Where damage can be modified/cancelled before affecting health
    - `getInspectDamageGroup()` - Where effects are applied after damage (default)
