@@ -135,6 +135,23 @@ export default defineConfig({
 						content: '#ff9900',
 					},
 				},
+				{
+					tag: 'script',
+					content: `
+						(function() {
+							const setupExternalLinks = () => {
+								document.querySelectorAll('a[href^="http"]').forEach(link => {
+									if (link.host !== window.location.host) {
+										link.setAttribute('target', '_blank');
+										link.setAttribute('rel', 'noopener noreferrer');
+									}
+								});
+							};
+							document.addEventListener('DOMContentLoaded', setupExternalLinks);
+							document.addEventListener('astro:page-load', setupExternalLinks);
+						})();
+					`,
+				},
 			],
 		}),
 	],

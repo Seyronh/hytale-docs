@@ -83,6 +83,11 @@ a:hover:not(.sl-link-button) {
 	scrollbar-color: var(--sl-color-gray-5) transparent;
 }
 
+/* Fix sidebar current page text - dark text on accent background */
+.sidebar a[aria-current="page"] {
+	color: #17181c !important;
+}
+
 /* Search box styling */
 site-search button {
 	border-color: var(--sl-color-gray-5);
