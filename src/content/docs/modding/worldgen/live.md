@@ -1,4 +1,5 @@
 ---
+author: Xaphedo
 title: Setting Up Live Worldgen Editing 
 description: Step-by-step instructions on how to set up a dedicated instace to edit v2 worldgen and see the results update in game, in real time
 sidebar:
