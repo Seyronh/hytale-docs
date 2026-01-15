@@ -8,6 +8,8 @@ sidebar:
 
 This section covers Hytale's procedural world generation systems that create diverse, engaging environments through zones, biomes, and cave networks.
 
+Go to [Setting Up Live Worldgen Editing](./live) if you want to get your hands dirty right away, editing biome files and playing around with the existing parameters. You'll be able to see the edits you make appear in game, live.
+
 ## Overview
 
 Hytale's world generation is organized into three interconnected systems:
@@ -289,3 +291,4 @@ Difficulty scales with distance:
 - Learn about the [Biome System](./biomes) for terrain characteristics
 - Explore [Cave Generation](./caves) for underground structures
 - Refer to [World Generation](../content/world-generation) for general concepts
+- Set up [Live Worldgen](./live) editing to put your knowledge into practice
