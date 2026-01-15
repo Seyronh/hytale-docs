@@ -241,6 +241,17 @@ Create a file at `Entity/Stats/MyCustomStat.json`:
 
 ### Accessing Custom Stats
 
+:::caution[Asset Loading Timing]
+Custom stat types from your plugin's asset pack are **not available** during the `setup()` or `start()` methods of your plugin. This is because:
+
+- **During `setup()`**: Only pre-loaded internal assets are available (like the `UNKNOWN` stat type). The base game assets have not been loaded yet.
+- **During `start()`**: Base game assets (Health, Stamina, etc.) are available, but your plugin's custom assets are loaded **after** `start()` returns.
+
+To safely access custom stat types, use one of these approaches:
+1. Register a `LoadedAssetsEvent` listener in `setup()` (recommended)
+2. Use lazy initialization when the stat is first needed
+:::
+
 ```java
 import com.hypixel.hytale.server.core.modules.entitystats.asset.EntityStatType;
 
@@ -273,16 +284,30 @@ Conditions control when regeneration occurs:
 ## Example: Custom Resource System
 
 ```java
+import com.hypixel.hytale.assetstore.event.LoadedAssetsEvent;
+import com.hypixel.hytale.server.core.modules.entitystats.asset.EntityStatType;
+
 public class MyResourcePlugin extends JavaPlugin {
-    private int focusStatIndex;
+    private int focusStatIndex = Integer.MIN_VALUE;
 
     @Override
-    protected void start() {
-        // Cache stat index after assets load
+    protected void setup() {
+        // Register listener to cache stat index when assets are loaded
+        getEventRegistry().register(
+            LoadedAssetsEvent.class,
+            EntityStatType.class,
+            this::onEntityStatTypesLoaded
+        );
+    }
+
+    private void onEntityStatTypesLoaded(LoadedAssetsEvent<?, ?, ?> event) {
+        // Called when EntityStatType assets are loaded or reloaded
         focusStatIndex = EntityStatType.getAssetMap().getIndex("Focus");
     }
 
     public void consumeFocus(Ref<EntityStore> ref, Store<EntityStore> store, float amount) {
+        if (focusStatIndex == Integer.MIN_VALUE) return; // Assets not loaded yet
+
         EntityStatMap stats = store.getComponent(ref, EntityStatMap.getComponentType());
         if (stats == null) return;
 
@@ -295,6 +320,8 @@ public class MyResourcePlugin extends JavaPlugin {
     }
 
     public void addFocusModifier(Ref<EntityStore> ref, Store<EntityStore> store) {
+        if (focusStatIndex == Integer.MIN_VALUE) return; // Assets not loaded yet
+
         EntityStatMap stats = store.getComponent(ref, EntityStatMap.getComponentType());
         if (stats == null) return;
 
@@ -307,6 +334,29 @@ public class MyResourcePlugin extends JavaPlugin {
     }
 }
 ```
+
+:::tip[Alternative: Lazy Initialization]
+If your custom stat is only used occasionally, you can use lazy initialization instead:
+
+```java
+public class MyResourcePlugin extends JavaPlugin {
+    private int focusStatIndex = Integer.MIN_VALUE;
+
+    private int getFocusStatIndex() {
+        if (focusStatIndex == Integer.MIN_VALUE) {
+            focusStatIndex = EntityStatType.getAssetMap().getIndex("Focus");
+        }
+        return focusStatIndex;
+    }
+
+    public void consumeFocus(/* ... */) {
+        int index = getFocusStatIndex();
+        if (index == Integer.MIN_VALUE) return; // Stat not found
+        // ... use index
+    }
+}
+```
+:::
 
 ## Best Practices
 
