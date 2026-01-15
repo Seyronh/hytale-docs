@@ -47,7 +47,7 @@ Copy the `Plains1_River.json` file found in the vanilla `\Server\HytaleGenerator
 ### 5. Verifying the Instance
 You should now have a new working instance available. In-game, use Creative Tools > World > Instance to warp to `Testing_Biome1_Instance`. Once there, double check that the instance is generating what seems to be an endless river-adjacent type of terrain.
 
-### 6. Live Editing with Viewport
+### 6. Live Editing with /viewport
 Position yourself in an area you'd like to edit and run the `/viewport --radius 3` command. This will make it so the area in a 3-chunk radius will update upon editing the biome file.
 
 Open the node editor (Creative Tools > Assets > Assets Node Editor) and load the biome file `Testing_Biome1.json` located in `Server\HytaleGenerator\Biomes\Testing`. You can also open this file in a text editor if you so choose.
